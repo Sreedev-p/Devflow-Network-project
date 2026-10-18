@@ -1,8 +1,6 @@
 import socket
 import struct
-
-# TODO (Teammate 1): Create devflow/dissector.py and import it here
-# TODO (Teammate 2): Create devflow/metrics.py and import it here
+from devflow.dissector import Dissector
 
 class CaptureEngine:
     def __init__(self, socketio=None, interface="lo"):
@@ -18,7 +16,6 @@ class CaptureEngine:
             self.process_packet(raw_data)
 
     def process_packet(self, raw_data):
-        # 1. Parse Ethernet Header (14 bytes)
         eth_header = raw_data[:14]
         eth_type = struct.unpack("!6s6sH", eth_header)[2]
 
@@ -26,20 +23,21 @@ class CaptureEngine:
             ihl = raw_data[14] & 0x0F
             ip_header_length = ihl * 4
 
-            # TODO (Teammate 1): Parse IPv4 header to extract Source and Destination IP
-            
-            # TODO (Teammate 1): Check if Protocol is 6 (TCP). If so, parse TCP header for Ports
-            
-            # TODO (Teammate 1): Filter out port 5000 so the dashboard doesn't capture its own traffic!
-            
-            # TODO (Teammate 1): Decode the Application Layer payload (HTTP or PostgreSQL)
-            
-            # TODO (Teammate 2): Pass ports to Metrics module to track request/response latency
-            
-            # TODO: Emit final formatted JSON event to self.socketio
-            pass
+            # --- Issue #1 Code Starts Here ---
+            protocol, src_ip, dest_ip = Dissector.parse_ipv4(raw_data)
+
+            if protocol == 6:  # TCP
+                tcp_offset = 14 + ip_header_length
+                src_port, dest_port, tcp_header_length = Dissector.parse_tcp(raw_data, tcp_offset)
+
+                # The Feedback-Loop Filter: Ignore dashboard traffic
+                if src_port == 5000 or dest_port == 5000:
+                    return
+
+                # Temporary print to verify Issue 1 works before moving to Application Layer
+                print(f"[TCP Caught] {src_ip}:{src_port} -> {dest_ip}:{dest_port}")
+            # --- Issue #1 Code Ends Here ---
 
 if __name__ == "__main__":
-    # Local terminal testing mode
     engine = CaptureEngine(interface="lo")
     engine.start()
