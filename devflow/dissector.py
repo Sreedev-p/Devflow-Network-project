@@ -4,18 +4,16 @@ import socket
 class Dissector:
     @staticmethod
     def parse_ipv4(raw_data):
-        # IPv4 header starts after the 14-byte Ethernet header
         ipv4_header = raw_data[14:34]
         
-        # Unpack format: skip 8 bytes, 1 byte (Protocol), skip 2 bytes, 4 bytes (Src IP), 4 bytes (Dest IP)
-        unpacked = struct.unpack("!8xB2x4s4s", ipv4_header)
+        # FIX: Changed 8x to 9x to correctly account for all 20 bytes
+        unpacked = struct.unpack("!9xB2x4s4s", ipv4_header)
         
         protocol = unpacked[0]
         src_ip = socket.inet_ntoa(unpacked[1])
         dest_ip = socket.inet_ntoa(unpacked[2])
         
         return protocol, src_ip, dest_ip
-
     @staticmethod
     def parse_tcp(raw_data, tcp_offset):
         # TCP header is at least 20 bytes long
